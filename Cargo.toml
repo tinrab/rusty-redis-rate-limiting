@@ -1,0 +1,19 @@
+[package]
+name = "rusty_redis_rate_limiting"
+version = "0.1.0"
+authors = ["Tin Rabzelj <tin@digiverse.si>"]
+edition = "2018"
+
+[lib]
+name = "rusty_redis_rate_limiting"
+path = "src/lib.rs"
+
+[[example]]
+name = "fixed_window"
+[[example]]
+name = "sliding_window"
+
+[dependencies]
+redis = "0.16.0"
+futures = "0.3.5"
+tokio = { version = "0.2.21", features = ["full"] }
