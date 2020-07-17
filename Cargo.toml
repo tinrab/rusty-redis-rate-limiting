@@ -11,6 +11,8 @@ path = "src/lib.rs"
 [[example]]
 name = "fixed_window"
 [[example]]
+name = "sliding_log"
+[[example]]
 name = "sliding_window"
 
 [dependencies]

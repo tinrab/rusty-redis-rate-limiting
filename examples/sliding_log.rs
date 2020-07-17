@@ -10,22 +10,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     for _ in 0..3 {
         rate_limiter
-            .record_sliding_window("test", "user1", size)
+            .record_sliding_log("test", "user1", size)
             .await?;
+        tokio::time::delay_for(Duration::from_millis(300)).await;
     }
-    let count = rate_limiter
-        .fetch_sliding_window("test", "user1", size)
-        .await?;
+    let count = rate_limiter.fetch_sliding_log("test", "user1").await?;
     assert_eq!(count, 3);
 
-    tokio::time::delay_for(size * 2).await;
-    rate_limiter
-        .record_sliding_window("test", "user1", size)
-        .await?;
+    tokio::time::delay_for(Duration::from_millis(600)).await;
     let count = rate_limiter
-        .fetch_sliding_window("test", "user1", size)
+        .record_sliding_log("test", "user1", size)
         .await?;
-    assert_eq!(count, 1);
+    assert_eq!(count, 2);
 
     Ok(())
 }
