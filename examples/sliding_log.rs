@@ -5,7 +5,7 @@ use rusty_redis_rate_limiting::rate_limiter::RateLimiter;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let mut rate_limiter = RateLimiter::create("redis://127.0.0.1:6379/").await?;
+    let mut rate_limiter = RateLimiter::open("redis://127.0.0.1:6379/").await?;
     let size = Duration::from_secs(1);
 
     for _ in 0..3 {

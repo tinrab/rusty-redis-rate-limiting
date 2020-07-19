@@ -12,7 +12,7 @@ pub struct RateLimiter {
 }
 
 impl RateLimiter {
-    pub async fn create(redis_address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn open(redis_address: &str) -> Result<Self, Box<dyn Error>> {
         let client = redis::Client::open(redis_address).unwrap();
         let conn = client.get_async_connection().await?;
         Ok(RateLimiter { conn })
@@ -112,11 +112,9 @@ impl RateLimiter {
 
         let (previous_count, current_count): (Option<u64>, Option<u64>) =
             self.conn.get(vec![previous_key, current_key]).await?;
-        let next_window = current_window + size_secs;
         Ok(Self::sliding_window_count(
             previous_count,
             current_count,
-            next_window,
             now,
             size,
         ))
@@ -149,27 +147,43 @@ impl RateLimiter {
             .ignore()
             .query_async(&mut self.conn)
             .await?;
-        let next_window = current_window + size_secs;
         Ok(Self::sliding_window_count(
             previous_count,
             current_count,
-            next_window,
             now,
             size,
         ))
     }
 
     /// Calculates weighted count based on previous and current time windows.
-    fn sliding_window_count(
+    pub fn sliding_window_count(
         previous: Option<u64>,
         current: Option<u64>,
-        next_window: u64,
         now: Duration,
         size: Duration,
     ) -> u64 {
-        let weight = 1.0
-            - ((Duration::from_secs(next_window).as_millis() - now.as_millis()) as f64
-                / size.as_millis() as f64);
+        let current_window = (now.as_secs() / size.as_secs()) * size.as_secs();
+        let next_window = current_window + size.as_secs();
+        let weight = (Duration::from_secs(next_window).as_millis() - now.as_millis()) as f64
+            / size.as_millis() as f64;
         current.unwrap_or(0) + (previous.unwrap_or(0) as f64 * weight).round() as u64
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn calculate_sliding_window_count() {
+        assert_eq!(
+            RateLimiter::sliding_window_count(
+                Some(5),
+                Some(3),
+                Duration::from_millis(1800),
+                Duration::from_secs(1)
+            ),
+            4
+        );
     }
 }
